@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KP Management Tanjung Pandan</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>KP Management</h1>
+        <p>Tanjung Pandan</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-text">Dashboard</span>
+        </button>
+        <button class="nav-item" data-page="buat-request">
+          <span class="nav-icon">📝</span>
+          <span class="nav-text">Buat Request KP</span>
+        </button>
+        <button class="nav-item" data-page="broadcast">
+          <span class="nav-icon">📢</span>
+          <span class="nav-text">Broadcast</span>
+        </button>
+        <button class="nav-item" data-page="histori">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Histori</span>
+        </button>
+        <button class="nav-item" data-page="master-data">
+          <span class="nav-icon">🗂️</span>
+          <span class="nav-text">Master Data</span>
+        </button>
+        <button class="nav-item" data-page="backup-data">
+          <span class="nav-icon">💾</span>
+          <span class="nav-text">Backup Data</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="page active">
+        <h2 class="page-title">Dashboard</h2>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-icon">📊</span>
+            <div class="stat-info">
+              <span class="stat-value" id="statTotalRequest">0</span>
+              <span class="stat-label">Total Request KP</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-icon">📅</span>
+            <div class="stat-info">
+              <span class="stat-value" id="statKpBulanIni">0</span>
+              <span class="stat-label">KP Bulan Ini</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-icon">🗓️</span>
+            <div class="stat-info">
+              <span class="stat-value" id="statKpHariIni">0</span>
+              <span class="stat-label">KP Hari Ini</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-icon">🎓</span>
+            <div class="stat-info">
+              <span class="stat-value" id="statTotalSiswa">0</span>
+              <span class="stat-label">Total Siswa</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-icon">👩‍🏫</span>
+            <div class="stat-info">
+              <span class="stat-value" id="statTotalMT">0</span>
+              <span class="stat-label">Total Master Teacher</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h3 class="section-title">KP Hari Ini</h3>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Jam</th>
+                  <th>Nama Siswa</th>
+                  <th>Mapel</th>
+                  <th>Kelas</th>
+                  <th>Master Teacher</th>
+                  <th>Ruangan</th>
+                </tr>
+              </thead>
+              <tbody id="kpHariIniBody">
+                <!-- Diisi otomatis oleh app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h3 class="section-title">Request Terbaru</h3>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nama Siswa</th>
+                  <th>Tanggal</th>
+                  <th>Jam</th>
+                  <th>Mapel</th>
+                  <th>Master Teacher</th>
+                </tr>
+              </thead>
+              <tbody id="requestTerbaruBody">
+                <!-- Diisi otomatis oleh app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUAT REQUEST KP -->
+      <section id="buat-request" class="page">
+        <h2 class="page-title">Buat Request KP</h2>
+
+        <div class="form-card">
+          <div id="formError" class="form-message error" style="display:none;"></div>
+
+          <form id="requestForm" novalidate>
+            <div class="form-grid">
+
+              <div class="form-group">
+                <label for="namaSiswa">Nama Siswa <span class="required">*</span></label>
+                <input type="text" id="namaSiswa" placeholder="Contoh: Ariq">
+              </div>
+
+              <div class="form-group">
+                <label for="saAgent">Nama SA/Agent <span class="required">*</span></label>
+                <select id="saAgent">
+                  <option value="">-- Pilih Agent --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="tanggal">Tanggal <span class="required">*</span></label>
+                <input type="date" id="tanggal">
+              </div>
+
+              <div class="form-group">
+                <label for="jamMulai">Jam Mulai <span class="required">*</span></label>
+                <input type="time" id="jamMulai">
+              </div>
+
+              <div class="form-group">
+                <label for="jamSelesai">Jam Selesai <span class="required">*</span></label>
+                <input type="time" id="jamSelesai">
+              </div>
+
+              <div class="form-group">
+                <label for="mapel">Mata Pelajaran <span class="required">*</span></label>
+                <select id="mapel">
+                  <option value="">-- Pilih Mata Pelajaran --</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="mapelCustomGroup" style="display:none;">
+                <label for="mapelCustom">Mata Pelajaran (Custom) <span class="required">*</span></label>
+                <input type="text" id="mapelCustom" placeholder="Tulis mata pelajaran lain">
+              </div>
+
+              <div class="form-group">
+                <label for="kelas">Kelas <span class="required">*</span></label>
+                <input type="text" id="kelas" list="kelasOptions" placeholder="Contoh: 8 SMP">
+                <datalist id="kelasOptions"></datalist>
+              </div>
+
+              <div class="form-group">
+                <label for="masterTeacher">Nama Master Teacher <span class="required">*</span></label>
+                <select id="masterTeacher">
+                  <option value="">-- Pilih Master Teacher --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="ruangan">Ruangan</label>
+                <select id="ruangan">
+                  <option value="">-- Pilih Ruangan --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="tipeKp">Tipe KP</label>
+                <select id="tipeKp">
+                  <option value="Klinik PR">Klinik PR</option>
+                  <option value="Private">Private</option>
+                </select>
+              </div>
+
+              <div class="form-group form-group-full">
+                <label for="topik">Topik</label>
+                <textarea id="topik" rows="3" placeholder="Contoh: Persiapan Ulangan"></textarea>
+              </div>
+
+            </div>
+
+            <input type="hidden" id="editingId" value="">
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Simpan Request</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- BROADCAST -->
+      <section id="broadcast" class="page">
+        <h2 class="page-title">Broadcast WhatsApp</h2>
+
+        <div class="broadcast-controls">
+          <div class="filter-group">
+            <label for="broadcastDateFilter">Pilih Berdasarkan Tanggal</label>
+            <input type="date" id="broadcastDateFilter">
+          </div>
+
+          <div class="broadcast-btn-group">
+            <button type="button" id="selectByDateBtn" class="btn btn-secondary">Pilih Tanggal Ini</button>
+            <button type="button" id="selectAllBtn" class="btn btn-secondary">Pilih Semua</button>
+            <button type="button" id="deselectAllBtn" class="btn btn-secondary">Batalkan Semua</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="checkbox-col"></th>
+                <th>Tanggal</th>
+                <th>Jam</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th>Mapel</th>
+                <th>Master Teacher</th>
+                <th>Ruangan</th>
+                <th>Tipe KP</th>
+              </tr>
+            </thead>
+            <tbody id="broadcastTableBody">
+              <!-- Diisi otomatis oleh app.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="broadcast-action-bar">
+          <span id="selectedCountLabel" class="selected-count">0 request dipilih</span>
+          <button type="button" id="generateBroadcastBtn" class="btn btn-primary">Generate Broadcast</button>
+        </div>
+
+        <div class="form-card broadcast-output-card">
+          <label for="broadcastOutput" class="output-label">Preview Text Broadcast</label>
+          <textarea id="broadcastOutput" rows="14" readonly placeholder="Text broadcast akan muncul di sini setelah klik Generate Broadcast..."></textarea>
+
+          <div class="form-actions broadcast-output-actions">
+            <button type="button" id="clearBroadcastBtn" class="btn btn-secondary">Clear</button>
+            <button type="button" id="copyBroadcastBtn" class="btn btn-primary">📋 Copy Text</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORI -->
+      <section id="histori" class="page">
+        <h2 class="page-title">Histori KP</h2>
+
+        <div class="filter-bar">
+          <div class="filter-group filter-search">
+            <label for="historiSearch">Cari Nama Siswa</label>
+            <input type="text" id="historiSearch" placeholder="Ketik nama siswa...">
+          </div>
+
+          <div class="filter-group">
+            <label for="filterTanggal">Tanggal</label>
+            <input type="date" id="filterTanggal">
+          </div>
+
+          <div class="filter-group">
+            <label for="filterAgent">Agent</label>
+            <select id="filterAgent">
+              <option value="">Semua</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filterMT">Master Teacher</label>
+            <select id="filterMT">
+              <option value="">Semua</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filterMapel">Mapel</label>
+            <select id="filterMapel">
+              <option value="">Semua</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filterKelas">Kelas</label>
+            <select id="filterKelas">
+              <option value="">Semua</option>
+            </select>
+          </div>
+
+          <div class="filter-group filter-reset-group">
+            <label>&nbsp;</label>
+            <button type="button" id="resetFilterBtn" class="btn btn-secondary">Reset Filter</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama Siswa</th>
+                <th>Nama SA/Agent</th>
+                <th>Hari</th>
+                <th>Tanggal</th>
+                <th>Jam</th>
+                <th>Mata Pelajaran</th>
+                <th>Kelas</th>
+                <th>Nama MT</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="historiTableBody">
+              <!-- Diisi otomatis oleh app.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- MASTER DATA -->
+      <section id="master-data" class="page">
+        <h2 class="page-title">Master Data</h2>
+        <div class="placeholder-box">
+          <p>Halaman Master Data belum diisi.</p>
+          <p class="placeholder-sub">Nantinya berisi daftar Master Teacher, Agent, dan Ruangan.</p>
+        </div>
+      </section>
+
+      <!-- BACKUP DATA -->
+      <section id="backup-data" class="page">
+        <h2 class="page-title">Backup Data</h2>
+
+        <div class="info-banner">
+          ℹ️ Data aplikasi disimpan secara lokal di browser ini. Lakukan backup secara berkala.
+        </div>
+
+        <div class="backup-card">
+          <h3 class="section-title">Export Data</h3>
+          <p class="backup-desc">
+            Unduh seluruh data request KP yang tersimpan saat ini sebagai file JSON.
+            File ini dapat digunakan untuk memindahkan data ke browser/perangkat lain atau sebagai cadangan.
+          </p>
+          <p class="backup-count">Total data saat ini: <strong id="backupDataCount">0</strong> request</p>
+          <button type="button" id="exportDataBtn" class="btn btn-primary">⬇️ Export &amp; Download Backup</button>
+        </div>
+
+        <div class="backup-card">
+          <h3 class="section-title">Import Data</h3>
+          <p class="backup-desc">
+            Pilih file backup JSON (hasil Export sebelumnya) untuk memulihkan data.
+            <strong>Seluruh data yang tersimpan saat ini akan ditimpa</strong> setelah Anda mengonfirmasi.
+          </p>
+          <div class="import-controls">
+            <input type="file" id="importFileInput" accept=".json,application/json">
+            <button type="button" id="importDataBtn" class="btn btn-primary" disabled>Import Data</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
