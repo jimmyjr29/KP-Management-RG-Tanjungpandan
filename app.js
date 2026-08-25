@@ -135,6 +135,8 @@ const MASTER_MAPEL = [
   "Sosiologi",
   "Sejarah",
   "Informatika",
+  "UTBK",
+  "TKA",
   "Lainnya"
 ];
 
