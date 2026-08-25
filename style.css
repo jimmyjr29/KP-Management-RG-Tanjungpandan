@@ -33,6 +33,14 @@ body {
   flex-direction: column;
 }
 
+.sidebar-header small {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  font-style: italic;
+  opacity: 0.75;
+}
+
 .sidebar-header {
   padding: 24px 20px;
   border-bottom: 1px solid #334155;

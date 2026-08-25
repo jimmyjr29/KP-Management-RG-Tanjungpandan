@@ -69,14 +69,14 @@ function hideGlobalLoading() {
 const MASTER_TEACHERS = [
   { nama: "Achmad Abdussalam", email: "abdussalamachmad3@gmail.com", noWa: "6283175623433" },
   { nama: "Addela Amelia", email: "addelaameliajob@gmail.com", noWa: "6281995401403" },
-  { nama: "ANISAH", email: "anisahhnf@gmail.com", noWa: "6281311023710" },
+  { nama: "Anisah", email: "anisahhnf@gmail.com", noWa: "6281311023710" },
   { nama: "Annida Naufallina", email: "dainnaafaun@gmail.com", noWa: "6281214458037" },
   { nama: "Cherin", email: "cherinerin1312@gmail.com", noWa: "6283179135146" },
   { nama: "Delila", email: "azizahrizkidelila@gmail.com", noWa: "6287708299334" },
   { nama: "Della Gustia", email: "dellagstia@gmail.com", noWa: "6287893762232" },
   { nama: "Dian Haryati", email: "dianharyati.ar@gmail.com", noWa: "6287896437160" },
   { nama: "Dimas Dwi Goestoro", email: "dimasdwigoestoro@gmail.com", noWa: "6281367588176" },
-  { nama: "ELIA SANTO EKAWALTA PERANGIN ANGIN", email: "eliaperanginangin21@guru.sma.belajar.id", noWa: "6281367230157" },
+  { nama: "Elia Santo Ekawalta Perangin Angin", email: "eliaperanginangin21@guru.sma.belajar.id", noWa: "6281367230157" },
   { nama: "Erieka Rahmah", email: "eriekarahm23@gmail.com", noWa: "6285172392302" },
   { nama: "Felicia Prassilia", email: "feliciaaprssl12.pel@gmail.com", noWa: "628381245975" },
   { nama: "Ferdiyanto", email: "ferdiyanto6q@gmail.com", noWa: "6287713426806" },
@@ -85,7 +85,7 @@ const MASTER_TEACHERS = [
   { nama: "Misfah Nur Rohmah", email: "ppg.misfahrohmah01128@program.belajar.id", noWa: "6285526313756" },
   { nama: "Monica Putri Ramadan", email: "monica.putri2080@guru.sd.belajar.id", noWa: "6287802550723" },
   { nama: "Nadyla", email: "nadyla014@gmail.com", noWa: "6287882433092" },
-  { nama: "NOVRIAN TANOKI PUTERA", email: "novrian.tanoki2@guru.smp.belajar.id", noWa: "6285945533434" },
+  { nama: "Novrian Tanoki Putera", email: "novrian.tanoki2@guru.smp.belajar.id", noWa: "6285945533434" },
   { nama: "Nur Izza Arifah", email: "nurizzaarifah10@gmail.com", noWa: "6281949059996" },
   { nama: "Primanisa Nurgravisi", email: "prinurgravisi@gmail.com", noWa: "6283175353388" },
   { nama: "Princessa Dinda Oktaviana", email: "incess2210@gmail.com", noWa: "6282134489158" },
@@ -94,9 +94,9 @@ const MASTER_TEACHERS = [
   { nama: "Safua Nur Habibah", email: "safuanurhabibah24@gmail.com", noWa: "6282246340534" },
   { nama: "Sheila", email: "sheilafanesia22@gmail.com", noWa: "62859110220208" },
   { nama: "Sonny Kosasi", email: "sonnykosasi16@gmail.com", noWa: "6281949582772" },
-  { nama: "SUCI UTAMI PUTRI", email: "suciputri82@guru.sma.belajar.id", noWa: "628176052264" },
+  { nama: "Suci Utami Putri", email: "suciputri82@guru.sma.belajar.id", noWa: "628176052264" },
   { nama: "Tiara Juniarti", email: "tiarajuniarti76@gmail.com", noWa: "6283803581626" },
-  { nama: "Widya Patricia nauli", email: "patnaul89@gmail.com", noWa: "6281367530324" },
+  { nama: "Widya Patricia Nauli", email: "patnaul89@gmail.com", noWa: "6281367530324" },
   { nama: "Yulis Suharti", email: "ysuharti21@gmail.com", noWa: "6285664249067" }
 ];
 
@@ -139,7 +139,7 @@ const MASTER_MAPEL = [
 ];
 
 const MASTER_KELAS = [
-  "1 SD", "2 SD", "3 SD", "4 SD", "5 SD", "6 SD",
+ "5 SD", "6 SD",
   "7 SMP", "8 SMP", "9 SMP",
   "10 SMA", "11 SMA", "12 SMA"
 ];
@@ -1000,7 +1000,6 @@ function getRuanganShort(ruanganFull) {
 // ============================================
 // BROADCAST: GENERATE TEXT
 // ============================================
-
 function generateBroadcastText(selectedRequests) {
   // Urutkan berdasarkan jam mulai sesuai spesifikasi
   const sorted = selectedRequests.slice().sort(function (a, b) {
@@ -1011,9 +1010,11 @@ function generateBroadcastText(selectedRequests) {
   const uniqueDates = Array.from(
     new Set(selectedRequests.map(function (r) { return r.tanggal; }))
   ).sort();
+
   const headerDateRaw = uniqueDates[0] || "";
 
   const lines = [];
+
   lines.push("REKAP FINAL KLINIK PR / KELAS PRIVATE");
   lines.push("📝 " + formatBroadcastDate(headerDateRaw));
 
@@ -1021,13 +1022,21 @@ function generateBroadcastText(selectedRequests) {
     lines.push("============================");
     lines.push("🏫 KELAS: " + r.kelas);
 
-    const namaTampil = r.namaSiswa + (r.tipeKp === "Private" ? " (private)" : "");
+    const namaTampil =
+      r.namaSiswa + (r.tipeKp === "Private" ? " (private)" : "");
+
     lines.push("🧑‍🎓 Siswa: " + namaTampil);
 
     const sesi = calculateSesiKp(r.jamMulai, r.jamSelesai);
+
     lines.push(
-      "🕟 Jam: " + formatJamBroadcast(r.jamMulai) + " - " + formatJamBroadcast(r.jamSelesai) +
-      " [" + sesi + " SESI KP]"
+      "🕟 Jam: " +
+      formatJamBroadcast(r.jamMulai) +
+      " - " +
+      formatJamBroadcast(r.jamSelesai) +
+      " [" +
+      sesi +
+      " SESI KP]"
     );
 
     lines.push("📝 Mapel: " + r.mapel);
@@ -1037,10 +1046,11 @@ function generateBroadcastText(selectedRequests) {
   });
 
   return {
-    text: lines.join("\n\n"),
+    text: lines.join("\n"),
     multipleDates: uniqueDates.length > 1
   };
 }
+
 
 // ============================================
 // BROADCAST: RENDER TABEL PEMILIHAN REQUEST
@@ -1259,7 +1269,7 @@ function getTodayDateString() {
 // Periode kuota TIDAK dimulai tanggal 1. Periode dimulai setiap tanggal 15
 // dan berakhir tanggal 14 bulan berikutnya (contoh: 15 Agustus - 14 September).
 
-const QUOTA_LIMIT = 200;
+const QUOTA_LIMIT = 150;
 
 const MONTH_NAMES_TITLE_CASE = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
