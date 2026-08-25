@@ -613,6 +613,173 @@ body {
 }
 
 /* ============================================
+   KUOTA KP BULANAN (DASHBOARD)
+   ============================================ */
+.quota-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 22px 24px;
+  margin-bottom: 28px;
+}
+
+.quota-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quota-title {
+  margin-bottom: 0;
+}
+
+.quota-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.quota-period {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.quota-main-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.quota-used-total {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.quota-unit {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.quota-progress-track {
+  width: 100%;
+  height: 10px;
+  background-color: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.quota-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.quota-detail-row {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.quota-percentage {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.quota-warning {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Status kuota: warna badge, progress bar, dan warning box */
+.quota-normal { background-color: #dcfce7; color: #15803d; }
+.quota-progress-fill.quota-normal { background-color: #22c55e; }
+
+.quota-perhatian { background-color: #fef9c3; color: #a16207; }
+.quota-progress-fill.quota-perhatian { background-color: #eab308; }
+
+.quota-warning-level { background-color: #ffedd5; color: #c2410c; }
+.quota-progress-fill.quota-warning-level { background-color: #f97316; }
+
+.quota-habis { background-color: #fee2e2; color: #b91c1c; }
+.quota-progress-fill.quota-habis { background-color: #ef4444; }
+
+.quota-warning.quota-warning-box {
+  background-color: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+}
+
+.quota-warning.quota-habis-box {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+/* ============================================
+   ADVANCED BACKUP (JSON) - <details>/<summary>
+   ============================================ */
+.advanced-backup {
+  margin-top: 8px;
+}
+
+.advanced-backup summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  user-select: none;
+  margin-bottom: 16px;
+}
+
+.advanced-backup .backup-card {
+  margin-bottom: 16px;
+}
+
+/* ============================================
+   GLOBAL LOADING INDICATOR (Supabase)
+   ============================================ */
+.global-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: #1e293b;
+  color: #f1f5f9;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 768px) {

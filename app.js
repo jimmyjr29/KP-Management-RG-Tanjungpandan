@@ -4,9 +4,63 @@
 // ============================================
 
 // ============================================
-// STORAGE KEY
+// KONFIGURASI SUPABASE
 // ============================================
-const STORAGE_KEY = "kp_requests_tanjungpandan";
+// Ganti dua nilai berikut dengan Project URL dan Publishable (anon) Key
+// dari dashboard Supabase Anda. JANGAN PERNAH menaruh service_role key di sini.
+
+const SUPABASE_URL = "https://cisjhkvazfosuajtegyx.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TB6Bv7OuDSOCvkUyoLWsbw_ur5FoOrx";
+
+const SUPABASE_TABLE = "kp_requests";
+
+// Key LocalStorage LAMA (sebelum migrasi ke Supabase) - hanya dibaca SEKALI
+// untuk proses migrasi satu kali, TIDAK PERNAH dipakai lagi sebagai sumber data.
+const OLD_LOCALSTORAGE_KEY = "kp_requests_tanjungpandan";
+const MIGRATION_FLAG_KEY = "kp_supabase_migration_done";
+
+let supabaseClient = null;
+try {
+  if (typeof supabase !== "undefined" && supabase.createClient) {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  }
+} catch (e) {
+  console.error("Gagal inisialisasi Supabase client:", e);
+  supabaseClient = null;
+}
+
+function ensureSupabaseReady() {
+  if (!supabaseClient) {
+    throw new Error("Supabase client belum siap / belum dikonfigurasi.");
+  }
+}
+
+// Log detail error Supabase/PostgREST selengkap mungkin (message, details, hint, code)
+// supaya gampang didiagnosis dari console browser tanpa perlu expand object manual.
+function logSupabaseError(context, err) {
+  const parts = [context];
+  if (err) {
+    if (err.message) parts.push("message: " + err.message);
+    if (err.details) parts.push("details: " + err.details);
+    if (err.hint) parts.push("hint: " + err.hint);
+    if (err.code) parts.push("code: " + err.code);
+  }
+  console.error(parts.join(" | "), err);
+}
+
+// ============================================
+// LOADING INDICATOR (sederhana)
+// ============================================
+
+function showGlobalLoading() {
+  const el = document.getElementById("globalLoading");
+  if (el) el.style.display = "block";
+}
+
+function hideGlobalLoading() {
+  const el = document.getElementById("globalLoading");
+  if (el) el.style.display = "none";
+}
 
 // ============================================
 // MASTER DATA (hardcoded sesuai Project Instructions)
@@ -85,7 +139,7 @@ const MASTER_MAPEL = [
 ];
 
 const MASTER_KELAS = [
-  "5 SD", "6 SD",
+  "1 SD", "2 SD", "3 SD", "4 SD", "5 SD", "6 SD",
   "7 SMP", "8 SMP", "9 SMP",
   "10 SMA", "11 SMA", "12 SMA"
 ];
@@ -94,23 +148,197 @@ const MASTER_KELAS = [
 // STORAGE HELPERS (LocalStorage)
 // ============================================
 
-function getAllRequests() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("Gagal membaca data dari LocalStorage:", e);
-    return [];
-  }
-}
+// ============================================
+// STATE / CACHE DATA (sumber untuk seluruh fungsi render yang bersifat sinkron)
+// ============================================
+// PENTING: Supabase adalah SINGLE SOURCE OF TRUTH. `cachedRequests` hanyalah
+// salinan di memori dari data Supabase, di-refresh setiap kali ada perubahan
+// (create/edit/delete/import) lewat refreshDataFromSupabase().
 
-function saveAllRequests(requests) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+let cachedRequests = [];
+
+// Dipertahankan agar SELURUH fungsi render yang sudah ada (Dashboard, Histori,
+// Broadcast, Kuota) TIDAK PERLU diubah sama sekali - mereka tetap memanggil
+// getAllRequests() secara sinkron seperti sebelumnya.
+function getAllRequests() {
+  return cachedRequests;
 }
 
 function generateId() {
   return "REQ-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7);
+}
+
+// ============================================
+// MAPPING FIELD: JS (camelCase) <-> Supabase (snake_case)
+// ============================================
+
+function toSupabaseRow(reqObj) {
+  const row = {
+    id: reqObj.id,
+    nama_siswa: reqObj.namaSiswa || null,
+    sa_agent: reqObj.saAgent || null,
+    tanggal: reqObj.tanggal || null,
+    jam_mulai: reqObj.jamMulai || null,
+    jam_selesai: reqObj.jamSelesai || null,
+    mapel: reqObj.mapel || null,
+    kelas: reqObj.kelas || null,
+    master_teacher: reqObj.masterTeacher || null,
+    ruangan: reqObj.ruangan || null,
+    tipe_kp: reqObj.tipeKp || null,
+    status: reqObj.status || null,
+    topik: reqObj.topik || null,
+    jumlah_sesi:
+      reqObj.jumlahSesi && reqObj.jumlahSesi > 0
+        ? reqObj.jumlahSesi
+        : 1
+  };
+
+  // created_at hanya dikirim jika memang tersedia.
+  // Jika tidak ada, Supabase akan menggunakan DEFAULT now().
+  if (reqObj.createdAt) {
+    row.created_at = reqObj.createdAt;
+  }
+
+  // updated_at hanya dikirim jika memang tersedia.
+  // Jika tidak ada, Supabase akan menggunakan DEFAULT now().
+  if (reqObj.updatedAt) {
+    row.updated_at = reqObj.updatedAt;
+  }
+
+  return row;
+}
+
+// function toSupabaseRow(reqObj) {
+//   return {
+//     id: reqObj.id,
+//     created_at: reqObj.createdAt || new Date().toISOString(),
+//     updated_at: reqObj.updatedAt || null,
+//     nama_siswa: reqObj.namaSiswa || null,
+//     sa_agent: reqObj.saAgent || null,
+//     tanggal: reqObj.tanggal || null,
+//     jam_mulai: reqObj.jamMulai || null,
+//     jam_selesai: reqObj.jamSelesai || null,
+//     mapel: reqObj.mapel || null,
+//     kelas: reqObj.kelas || null,
+//     master_teacher: reqObj.masterTeacher || null,
+//     ruangan: reqObj.ruangan || null,
+//     tipe_kp: reqObj.tipeKp || null,
+//     status: reqObj.status || null,
+//     topik: reqObj.topik || null,
+//     jumlah_sesi: reqObj.jumlahSesi && reqObj.jumlahSesi > 0 ? reqObj.jumlahSesi : 1
+//   };
+// }
+
+// Kolom Postgres bertipe TIME sering keluar sebagai "09:30:00" (dengan detik).
+// Dipotong jadi "09:30" agar konsisten dgn seluruh logika app (sorting, format broadcast, dst).
+function normalizeTimeHM(value) {
+  if (!value) return value;
+  return String(value).substring(0, 5);
+}
+
+function fromSupabaseRow(row) {
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    namaSiswa: row.nama_siswa,
+    saAgent: row.sa_agent,
+    tanggal: row.tanggal,
+    jamMulai: normalizeTimeHM(row.jam_mulai),
+    jamSelesai: normalizeTimeHM(row.jam_selesai),
+    mapel: row.mapel,
+    kelas: row.kelas,
+    masterTeacher: row.master_teacher,
+    ruangan: row.ruangan,
+    tipeKp: row.tipe_kp,
+    status: row.status,
+    topik: row.topik,
+    jumlahSesi: row.jumlah_sesi && row.jumlah_sesi > 0 ? row.jumlah_sesi : 1
+  };
+}
+
+// ============================================
+// REFRESH DATA DARI SUPABASE (dipanggil setelah load awal & setiap mutasi)
+// ============================================
+
+async function refreshDataFromSupabase() {
+  showGlobalLoading();
+  try {
+    ensureSupabaseReady();
+
+    const { data, error } = await supabaseClient
+      .from(SUPABASE_TABLE)
+      .select("*")
+      .order("tanggal", { ascending: true })
+      .order("jam_mulai", { ascending: true });
+
+    if (error) throw error;
+
+    cachedRequests = (data || []).map(fromSupabaseRow);
+    renderAllViews();
+    return true;
+  } catch (err) {
+    logSupabaseError("Gagal memuat data dari Supabase", err);
+    showToast("⚠️ Gagal terhubung ke database. Periksa koneksi internet.");
+    return false;
+  } finally {
+    hideGlobalLoading();
+  }
+}
+
+function renderAllViews() {
+  renderDashboard();
+  renderHistoriTable();
+  renderBroadcastTable();
+  renderBackupInfo();
+}
+
+// ============================================
+// MIGRASI SATU KALI: LocalStorage LAMA -> Supabase
+// ============================================
+
+async function migrateLocalStorageToSupabase() {
+  try {
+    if (localStorage.getItem(MIGRATION_FLAG_KEY) === "true") {
+      return; // sudah pernah migrasi di browser ini, tidak perlu diulang
+    }
+
+    const raw = localStorage.getItem(OLD_LOCALSTORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(MIGRATION_FLAG_KEY, "true");
+      return; // tidak ada data lama di browser ini
+    }
+
+    let oldData;
+    try {
+      oldData = JSON.parse(raw);
+    } catch (e) {
+      console.error("Data lama di LocalStorage rusak, migrasi dilewati:", e);
+      return; // jangan tandai selesai; jangan hapus data lama
+    }
+
+    if (!Array.isArray(oldData) || oldData.length === 0) {
+      localStorage.setItem(MIGRATION_FLAG_KEY, "true");
+      return;
+    }
+
+    ensureSupabaseReady();
+
+    const rows = oldData.map(toSupabaseRow);
+
+    // UPSERT berdasarkan id -> aman dari duplikasi jika sebagian data sudah ada di Supabase
+    const { error } = await supabaseClient
+      .from(SUPABASE_TABLE)
+      .upsert(rows, { onConflict: "id" });
+
+    if (error) throw error;
+
+    localStorage.setItem(MIGRATION_FLAG_KEY, "true");
+    showToast("Data lokal berhasil dimigrasikan ke database.");
+  } catch (err) {
+    logSupabaseError("Migrasi LocalStorage -> Supabase gagal", err);
+    // JANGAN set flag selesai & JANGAN hapus data lama jika gagal -> akan dicoba lagi saat load berikutnya
+  }
 }
 
 // ============================================
@@ -328,7 +556,7 @@ function initRequestForm() {
   const form = document.getElementById("requestForm");
   if (!form) return;
 
-  form.addEventListener("submit", function (e) {
+  form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
     const mapelSelected = document.getElementById("mapel").value;
@@ -346,6 +574,7 @@ function initRequestForm() {
       masterTeacher: document.getElementById("masterTeacher").value,
       ruangan: document.getElementById("ruangan").value,
       tipeKp: document.getElementById("tipeKp").value,
+      status: document.getElementById("status").value,
       topik: document.getElementById("topik").value.trim()
     };
 
@@ -359,39 +588,74 @@ function initRequestForm() {
     showFormErrors([]);
 
     const editingId = document.getElementById("editingId").value;
-    const allRequests = getAllRequests();
+    const submitBtn = form.querySelector('button[type="submit"]');
 
     if (editingId) {
-      // MODE EDIT: perbarui record yang sudah ada
-      const idx = allRequests.findIndex(function (r) {
-        return r.id === editingId;
-      });
+      // MODE EDIT: Supabase UPDATE berdasarkan id (TIDAK overwrite seluruh tabel)
+      const row = toSupabaseRow(Object.assign({ id: editingId }, data, { updatedAt: new Date().toISOString() }));
+      delete row.id; // id adalah primary key, jangan ikut di-update
+      delete row.created_at; // jangan timpa created_at saat update
 
-      if (idx !== -1) {
-        allRequests[idx] = Object.assign({}, allRequests[idx], data, {
-          updatedAt: new Date().toISOString()
-        });
-        saveAllRequests(allRequests);
+      if (submitBtn) submitBtn.disabled = true;
+      showGlobalLoading();
+      try {
+        ensureSupabaseReady();
+        const { error } = await supabaseClient.from(SUPABASE_TABLE).update(row).eq("id", editingId);
+        if (error) throw error;
+
+        const refreshed = await refreshDataFromSupabase();
+        if (refreshed) {
+          showToast("Request KP berhasil diperbarui.");
+          resetFormToCreateMode();
+          switchToPage("histori");
+        }
+        // Jika refresh gagal, data TIDAK dianggap sukses secara diam-diam;
+        // pesan error sudah ditampilkan oleh refreshDataFromSupabase().
+      } catch (err) {
+        logSupabaseError("Gagal update request", err);
+        showToast("⚠️ Gagal terhubung ke database. Periksa koneksi internet.");
+      } finally {
+        hideGlobalLoading();
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } else {
+      // MODE TAMBAH BARU: cek kuota bulanan (dari cache lokal) sebelum insert
+      if (isQuotaExceededForNewRequest(data.tanggal, data.status, 1)) {
+        showFormErrors(["Kuota KP bulan ini sudah habis. Request baru tidak dapat dibuat."]);
+        return;
       }
 
-      showToast("Request KP berhasil diperbarui.");
-      resetFormToCreateMode();
-      switchToPage("histori");
-    } else {
-      // MODE TAMBAH BARU
       const newRequest = Object.assign(
         {
           id: generateId(),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          jumlahSesi: 1
         },
         data
       );
+      const row = toSupabaseRow(newRequest);
 
-      allRequests.push(newRequest);
-      saveAllRequests(allRequests);
+      if (submitBtn) submitBtn.disabled = true;
+      showGlobalLoading();
+      try {
+        ensureSupabaseReady();
+        const { error } = await supabaseClient.from(SUPABASE_TABLE).insert(row);
+        if (error) throw error;
 
-      showToast("Request KP berhasil disimpan.");
-      resetFormToCreateMode();
+        const refreshed = await refreshDataFromSupabase();
+        if (refreshed) {
+          showToast("Request KP berhasil disimpan.");
+          resetFormToCreateMode();
+        }
+        // Jika INSERT/refresh gagal, form SENGAJA TIDAK direset & TIDAK dianggap
+        // tersimpan, supaya user tidak kehilangan isian dan tidak tertipu status sukses palsu.
+      } catch (err) {
+        logSupabaseError("Gagal menyimpan request baru", err);
+        showToast("⚠️ Gagal terhubung ke database. Periksa koneksi internet.");
+      } finally {
+        hideGlobalLoading();
+        if (submitBtn) submitBtn.disabled = false;
+      }
     }
   });
 }
@@ -417,6 +681,7 @@ function editRequest(id) {
   document.getElementById("masterTeacher").value = req.masterTeacher || "";
   document.getElementById("ruangan").value = req.ruangan || "";
   document.getElementById("tipeKp").value = req.tipeKp || "Klinik PR";
+  document.getElementById("status").value = req.status || "Terjadwal";
   document.getElementById("topik").value = req.topik || "";
 
   // Tangani mapel: jika bukan bagian dari master list, gunakan mode custom "Lainnya"
@@ -447,21 +712,29 @@ function editRequest(id) {
 // DELETE REQUEST (dengan konfirmasi)
 // ============================================
 
-function deleteRequest(id) {
+async function deleteRequest(id) {
   const confirmed = window.confirm(
     "Apakah Anda yakin ingin menghapus request ini? Data yang dihapus tidak dapat dikembalikan."
   );
 
   if (!confirmed) return;
 
-  let requests = getAllRequests();
-  requests = requests.filter(function (r) {
-    return r.id !== id;
-  });
+  showGlobalLoading();
+  try {
+    ensureSupabaseReady();
+    const { error } = await supabaseClient.from(SUPABASE_TABLE).delete().eq("id", id);
+    if (error) throw error;
 
-  saveAllRequests(requests);
-  showToast("Request KP berhasil dihapus.");
-  renderHistoriTable();
+    const refreshed = await refreshDataFromSupabase();
+    if (refreshed) {
+      showToast("Request KP berhasil dihapus.");
+    }
+  } catch (err) {
+    logSupabaseError("Gagal menghapus request", err);
+    showToast("⚠️ Gagal terhubung ke database. Periksa koneksi internet.");
+  } finally {
+    hideGlobalLoading();
+  }
 }
 
 // ============================================
@@ -981,6 +1254,152 @@ function getTodayDateString() {
 }
 
 // ============================================
+// KUOTA KP BULANAN
+// ============================================
+// Periode kuota TIDAK dimulai tanggal 1. Periode dimulai setiap tanggal 15
+// dan berakhir tanggal 14 bulan berikutnya (contoh: 15 Agustus - 14 September).
+
+const QUOTA_LIMIT = 200;
+
+const MONTH_NAMES_TITLE_CASE = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+function formatDateYMD(d) {
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+
+// Menghitung periode kuota aktif berdasarkan tanggal referensi (biasanya hari ini)
+function getQuotaPeriod(refDate) {
+  const year = refDate.getFullYear();
+  const month = refDate.getMonth(); // 0-11
+  const day = refDate.getDate();
+
+  let startYear = year;
+  let startMonth = month;
+
+  if (day < 15) {
+    // Sebelum tanggal 15 -> periode dimulai tanggal 15 BULAN SEBELUMNYA
+    startMonth = month - 1;
+    if (startMonth < 0) {
+      startMonth = 11;
+      startYear = year - 1;
+    }
+  }
+  // Jika day >= 15 -> periode dimulai tanggal 15 bulan ini (startMonth = month, tidak diubah)
+
+  const startDate = new Date(startYear, startMonth, 15);
+
+  let endMonth = startMonth + 1;
+  let endYear = startYear;
+  if (endMonth > 11) {
+    endMonth = 0;
+    endYear = startYear + 1;
+  }
+  const endDate = new Date(endYear, endMonth, 14);
+
+  return { startDate: startDate, endDate: endDate };
+}
+
+function formatPeriodRangeID(startDate, endDate) {
+  const startStr = startDate.getDate() + " " + MONTH_NAMES_TITLE_CASE[startDate.getMonth()];
+  const endStr =
+    endDate.getDate() + " " + MONTH_NAMES_TITLE_CASE[endDate.getMonth()] + " " + endDate.getFullYear();
+  return startStr + " - " + endStr;
+}
+
+// Menghitung total sesi KP terpakai dalam suatu rentang periode.
+// Request berstatus Cancelled/Rejected TIDAK dihitung.
+function getQuotaUsage(startDate, endDate) {
+  const requests = getAllRequests();
+  const startStr = formatDateYMD(startDate);
+  const endStr = formatDateYMD(endDate);
+
+  let used = 0;
+  requests.forEach(function (r) {
+    if (!r.tanggal) return;
+    if (r.tanggal < startStr || r.tanggal > endStr) return;
+
+    const status = r.status || "Terjadwal";
+    if (status === "Cancelled" || status === "Rejected") return;
+
+    const sesi = r.jumlahSesi && r.jumlahSesi > 0 ? r.jumlahSesi : 1;
+    used += sesi;
+  });
+
+  return used;
+}
+
+function calculateQuotaPercentage(used, total) {
+  if (total <= 0) return 0;
+  return (used / total) * 100;
+}
+
+function getQuotaStatusInfo(percentage) {
+  if (percentage >= 100) return { label: "Kuota Habis", className: "quota-habis" };
+  if (percentage >= 85) return { label: "Warning", className: "quota-warning-level" };
+  if (percentage >= 70) return { label: "Perhatian", className: "quota-perhatian" };
+  return { label: "Normal", className: "quota-normal" };
+}
+
+// Dipanggil sebelum menyimpan request BARU (bukan edit).
+// Request berstatus Cancelled/Rejected tidak pernah diblokir karena tidak memakai kuota.
+function isQuotaExceededForNewRequest(tanggal, status, jumlahSesi) {
+  if (status === "Cancelled" || status === "Rejected") return false;
+  if (!tanggal) return false;
+
+  const d = new Date(tanggal + "T00:00:00");
+  if (isNaN(d.getTime())) return false;
+
+  const period = getQuotaPeriod(d);
+  const currentUsage = getQuotaUsage(period.startDate, period.endDate);
+  const sesi = jumlahSesi && jumlahSesi > 0 ? jumlahSesi : 1;
+
+  return currentUsage + sesi > QUOTA_LIMIT;
+}
+
+function renderQuotaCard() {
+  const badgeEl = document.getElementById("quotaBadge");
+  if (!badgeEl) return; // halaman dashboard belum ter-render (jaga-jaga)
+
+  const period = getQuotaPeriod(new Date());
+  const used = getQuotaUsage(period.startDate, period.endDate);
+  const percentage = calculateQuotaPercentage(used, QUOTA_LIMIT);
+  const sisa = Math.max(QUOTA_LIMIT - used, 0);
+  const statusInfo = getQuotaStatusInfo(percentage);
+
+  document.getElementById("quotaPeriodLabel").textContent =
+    "Periode: " + formatPeriodRangeID(period.startDate, period.endDate);
+  document.getElementById("quotaUsedTotal").textContent = used + " / " + QUOTA_LIMIT;
+  document.getElementById("quotaTerpakai").textContent = used;
+  document.getElementById("quotaSisa").textContent = sisa;
+  document.getElementById("quotaPercentage").textContent = percentage.toFixed(1) + "%";
+
+  const fillEl = document.getElementById("quotaProgressFill");
+  fillEl.style.width = Math.min(percentage, 100) + "%";
+  fillEl.className = "quota-progress-fill " + statusInfo.className;
+
+  badgeEl.textContent = statusInfo.label;
+  badgeEl.className = "quota-badge " + statusInfo.className;
+
+  const warningBox = document.getElementById("quotaWarningBox");
+  if (percentage >= 100) {
+    warningBox.style.display = "block";
+    warningBox.className = "quota-warning quota-habis-box";
+    warningBox.innerHTML =
+      "🚨 <strong>KUOTA KP HABIS</strong><br>Kuota " + QUOTA_LIMIT + " sesi untuk periode ini telah digunakan.";
+  } else if (percentage >= 85) {
+    warningBox.style.display = "block";
+    warningBox.className = "quota-warning quota-warning-box";
+    warningBox.innerHTML = "⚠️ <strong>KUOTA KP HAMPIR HABIS</strong><br>Sisa kuota: " + sisa + " sesi.";
+  } else {
+    warningBox.style.display = "none";
+    warningBox.innerHTML = "";
+  }
+}
+
+// ============================================
 // DASHBOARD: RENDER STATISTIK & DAFTAR
 // ============================================
 
@@ -1022,6 +1441,9 @@ function renderDashboard() {
   // ---- Render daftar ----
   renderKpHariIniList(kpHariIniArr);
   renderRequestTerbaru(requests);
+
+  // ---- Render kuota bulanan ----
+  renderQuotaCard();
 }
 
 function renderKpHariIniList(kpHariIniArr) {
@@ -1092,45 +1514,388 @@ function renderBackupInfo() {
 }
 
 // ============================================
-// BACKUP DATA: EXPORT
+// BACKUP DATA: EXPORT EXCEL (SheetJS / XLSX)
 // ============================================
 
-function exportBackupData() {
-  const requests = getAllRequests();
+function buildExcelRows(requests) {
+  const header = [
+    "No", "Nama Siswa", "Nama SA/Agent", "Hari", "Tanggal",
+    "Jam Mulai", "Jam Selesai", "Jam", "Mata Pelajaran", "Kelas",
+    "Nama MT", "Email MT", "No WA MT", "Ruangan", "Tipe KP",
+    "Topik", "Status", "Jumlah Sesi", "ID"
+  ];
 
-  const backupObject = {
-    appName: "KP Management Tanjung Pandan",
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    totalData: requests.length,
-    requests: requests
-  };
+  const rows = [header];
 
-  const jsonStr = JSON.stringify(backupObject, null, 2);
-  const blob = new Blob([jsonStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
+  requests.forEach(function (r, idx) {
+    const mt = MASTER_TEACHERS.find(function (m) {
+      return m.nama === r.masterTeacher;
+    });
 
-  const filename = "KP-Backup-" + getTodayDateString() + ".json";
+    rows.push([
+      idx + 1,
+      r.namaSiswa || "",
+      r.saAgent || "",
+      getHariFromTanggal(r.tanggal),
+      formatTanggalDisplay(r.tanggal),
+      r.jamMulai || "",
+      r.jamSelesai || "",
+      (r.jamMulai || "-") + " - " + (r.jamSelesai || "-"),
+      r.mapel || "",
+      r.kelas || "",
+      r.masterTeacher || "",
+      mt ? mt.email : "",
+      mt ? mt.noWa : "",
+      r.ruangan || "",
+      r.tipeKp || "",
+      r.topik || "",
+      r.status || "Terjadwal",
+      r.jumlahSesi && r.jumlahSesi > 0 ? r.jumlahSesi : 1,
+      r.id || ""
+    ]);
+  });
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  return rows;
+}
 
-  showToast("Backup berhasil diexport (" + requests.length + " data).");
+async function exportExcelData() {
+  if (typeof XLSX === "undefined") {
+    showToast("Library Excel gagal dimuat. Periksa koneksi internet Anda lalu coba lagi.");
+    return;
+  }
+
+  showGlobalLoading();
+  try {
+    ensureSupabaseReady();
+    const { data, error } = await supabaseClient
+      .from(SUPABASE_TABLE)
+      .select("*")
+      .order("tanggal", { ascending: true })
+      .order("jam_mulai", { ascending: true });
+
+    if (error) throw error;
+
+    const requests = (data || []).map(fromSupabaseRow);
+    const rows = buildExcelRows(requests);
+
+    const worksheet = XLSX.utils.aoa_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data KP");
+
+    const filename = "KP-Management-" + getTodayDateString() + ".xlsx";
+    XLSX.writeFile(workbook, filename);
+
+    showToast("Export Excel berhasil (" + requests.length + " data).");
+  } catch (err) {
+    logSupabaseError("Gagal export Excel", err);
+    showToast("⚠️ Gagal terhubung ke database. Periksa koneksi internet.");
+  } finally {
+    hideGlobalLoading();
+  }
 }
 
 // ============================================
-// BACKUP DATA: IMPORT + VALIDASI + KONFIRMASI
+// BACKUP DATA: IMPORT EXCEL (SheetJS / XLSX) - mode ADD/MERGE
+// ============================================
+
+const REQUIRED_EXCEL_HEADERS = [
+  "Nama Siswa", "Nama SA/Agent", "Tanggal",
+  "Jam Mulai", "Jam Selesai", "Mata Pelajaran", "Kelas", "Nama MT"
+];
+
+// Menerima format Tanggal: "DD/MM/YYYY", "YYYY-MM-DD", objek Date (jika Excel
+// menyimpannya sbg tanggal asli), atau serial number Excel.
+function parseExcelDateToYMD(value) {
+  if (value === undefined || value === null || value === "") return "";
+
+  if (Object.prototype.toString.call(value) === "[object Date]" && !isNaN(value.getTime())) {
+    return value.getFullYear() + "-" + pad2(value.getMonth() + 1) + "-" + pad2(value.getDate());
+  }
+
+  if (typeof value === "number" && typeof XLSX !== "undefined" && XLSX.SSF && XLSX.SSF.parse_date_code) {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (parsed) {
+      return parsed.y + "-" + pad2(parsed.m) + "-" + pad2(parsed.d);
+    }
+  }
+
+  const str = String(value).trim();
+
+  const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ddmmyyyy) {
+    return ddmmyyyy[3] + "-" + pad2(parseInt(ddmmyyyy[2], 10)) + "-" + pad2(parseInt(ddmmyyyy[1], 10));
+  }
+
+  const yyyymmdd = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (yyyymmdd) {
+    return yyyymmdd[1] + "-" + pad2(parseInt(yyyymmdd[2], 10)) + "-" + pad2(parseInt(yyyymmdd[3], 10));
+  }
+
+  return "";
+}
+
+// Menerima format Jam: "HH:MM", "HH.MM", atau fraksi hari (serial number Excel).
+function parseExcelTimeToHM(value) {
+  if (value === undefined || value === null || value === "") return "";
+
+  if (typeof value === "number") {
+    const totalMinutes = Math.round(value * 24 * 60);
+    const h = Math.floor(totalMinutes / 60) % 24;
+    const m = totalMinutes % 60;
+    return pad2(h) + ":" + pad2(m);
+  }
+
+  const str = String(value).trim();
+  const match = str.match(/^(\d{1,2})[.:](\d{2})/);
+  if (match) {
+    return pad2(parseInt(match[1], 10)) + ":" + pad2(parseInt(match[2], 10));
+  }
+
+  return "";
+}
+
+function processImportExcelFile(file) {
+  if (typeof XLSX === "undefined") {
+    showToast("Library Excel gagal dimuat. Periksa koneksi internet Anda lalu coba lagi.");
+    resetImportExcelInput();
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async function (e) {
+    let workbook;
+
+    try {
+      const data = new Uint8Array(e.target.result);
+      workbook = XLSX.read(data, { type: "array" });
+    } catch (err) {
+      showToast("File tidak valid.");
+      resetImportExcelInput();
+      return;
+    }
+
+    if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+      showToast("File tidak valid.");
+      resetImportExcelInput();
+      return;
+    }
+
+    const sheetName = workbook.SheetNames.indexOf("Data KP") !== -1 ? "Data KP" : workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    let rows;
+    try {
+      rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    } catch (err) {
+      showToast("File tidak valid.");
+      resetImportExcelInput();
+      return;
+    }
+
+    if (!rows || rows.length === 0) {
+      showToast("File Excel tidak berisi data.");
+      resetImportExcelInput();
+      return;
+    }
+
+    // ---- Validasi header wajib ----
+    const actualHeaders = Object.keys(rows[0]);
+    const missingHeaders = REQUIRED_EXCEL_HEADERS.filter(function (h) {
+      return actualHeaders.indexOf(h) === -1;
+    });
+
+    if (missingHeaders.length > 0) {
+      showToast("Format Excel tidak sesuai.");
+      resetImportExcelInput();
+      return;
+    }
+
+    // ---- Konfirmasi sebelum menambahkan data (mode ADD/MERGE) ----
+    const confirmed = window.confirm(
+      "Import Excel akan menambahkan data ke data yang sudah ada. Lanjutkan?"
+    );
+
+    if (!confirmed) {
+      showToast("Import Excel dibatalkan.");
+      resetImportExcelInput();
+      return;
+    }
+
+    // ---- Konversi baris & cegah duplikasi berdasarkan ID ----
+    const existingRequests = getAllRequests();
+    const existingIds = new Set(
+      existingRequests.map(function (r) { return r.id; }).filter(Boolean)
+    );
+
+    let berhasil = 0;
+    let duplikat = 0;
+    let gagal = 0;
+    const toAdd = [];
+
+    rows.forEach(function (row) {
+      const namaSiswa = String(row["Nama Siswa"] || "").trim();
+      const saAgent = String(row["Nama SA/Agent"] || "").trim();
+      const tanggal = parseExcelDateToYMD(row["Tanggal"]);
+      const jamMulai = parseExcelTimeToHM(row["Jam Mulai"]);
+      const jamSelesai = parseExcelTimeToHM(row["Jam Selesai"]);
+      const mapel = String(row["Mata Pelajaran"] || "").trim();
+      const kelas = String(row["Kelas"] || "").trim();
+      const masterTeacher = String(row["Nama MT"] || "").trim();
+
+      const isRowValid =
+        namaSiswa && saAgent && tanggal && jamMulai && jamSelesai && mapel && kelas && masterTeacher;
+
+      if (!isRowValid) {
+        gagal++;
+        return;
+      }
+
+      let rowId = row["ID"] ? String(row["ID"]).trim() : "";
+
+      if (rowId && existingIds.has(rowId)) {
+        duplikat++;
+        return;
+      }
+
+      if (!rowId) {
+        rowId = generateId();
+      }
+
+      let jumlahSesi = parseInt(row["Jumlah Sesi"], 10);
+      if (!jumlahSesi || jumlahSesi < 1) jumlahSesi = 1;
+
+      const newReq = {
+        id: rowId,
+        createdAt: new Date().toISOString(),
+        namaSiswa: namaSiswa,
+        saAgent: saAgent,
+        tanggal: tanggal,
+        jamMulai: jamMulai,
+        jamSelesai: jamSelesai,
+        mapel: mapel,
+        kelas: kelas,
+        masterTeacher: masterTeacher,
+        ruangan: String(row["Ruangan"] || "").trim(),
+        tipeKp: String(row["Tipe KP"] || "").trim() || "Klinik PR",
+        topik: String(row["Topik"] || "").trim(),
+        status: String(row["Status"] || "").trim() || "Terjadwal",
+        jumlahSesi: jumlahSesi
+      };
+
+      toAdd.push(newReq);
+      existingIds.add(rowId); // cegah duplikat antar baris di file yang sama
+      berhasil++;
+    });
+
+    if (toAdd.length > 0) {
+      const rowsForSupabase = toAdd.map(toSupabaseRow);
+
+      showGlobalLoading();
+      try {
+        ensureSupabaseReady();
+        // INSERT biasa (bukan upsert) - baris di sini SUDAH dipastikan idnya belum ada,
+        // sesuai aturan "cegah duplikasi berdasarkan ID" (duplikat dilewati di atas, bukan ditimpa).
+        const { error } = await supabaseClient.from(SUPABASE_TABLE).insert(rowsForSupabase);
+        if (error) throw error;
+
+        await refreshDataFromSupabase();
+      } catch (err) {
+        logSupabaseError("Gagal menyimpan data import Excel ke Supabase", err);
+        window.alert(
+          "⚠️ Gagal terhubung ke database. Import dibatalkan, tidak ada data yang tersimpan.\n" +
+          "Periksa koneksi internet lalu coba lagi."
+        );
+        hideGlobalLoading();
+        resetImportExcelInput();
+        return;
+      }
+      hideGlobalLoading();
+    }
+
+    // ---- Ringkasan hasil import ----
+    const summaryLines = ["Import selesai."];
+    summaryLines.push("Berhasil: " + berhasil + " data");
+    if (duplikat > 0) summaryLines.push("Duplikat dilewati: " + duplikat + " data");
+    summaryLines.push("Gagal: " + gagal + " data");
+
+    window.alert(summaryLines.join("\n"));
+
+    resetImportExcelInput();
+  };
+
+  reader.onerror = function () {
+    showToast("Gagal membaca file. Silakan coba lagi.");
+    resetImportExcelInput();
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+function resetImportExcelInput() {
+  const input = document.getElementById("importExcelFileInput");
+  const btn = document.getElementById("importExcelBtn");
+  if (input) input.value = "";
+  if (btn) btn.disabled = true;
+}
+
+// ============================================
+// BACKUP DATA: EXPORT JSON
+// ============================================
+
+async function exportBackupData() {
+  showGlobalLoading();
+  try {
+    ensureSupabaseReady();
+    const { data, error } = await supabaseClient
+      .from(SUPABASE_TABLE)
+      .select("*")
+      .order("tanggal", { ascending: true })
+      .order("jam_mulai", { ascending: true });
+
+    if (error) throw error;
+
+    const requests = (data || []).map(fromSupabaseRow);
+
+    const backupObject = {
+      appName: "KP Management Tanjung Pandan",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      totalData: requests.length,
+      requests: requests
+    };
+
+    const jsonStr = JSON.stringify(backupObject, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const filename = "KP-Backup-" + getTodayDateString() + ".json";
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast("Backup berhasil diexport (" + requests.length + " data).");
+  } catch (err) {
+    logSupabaseError("Gagal export JSON", err);
+    showToast("⚠️ Gagal terhubung ke database. Periksa koneksi internet.");
+  } finally {
+    hideGlobalLoading();
+  }
+}
+
+// ============================================
+// BACKUP DATA: IMPORT JSON + VALIDASI + KONFIRMASI (mode UPSERT, bukan timpa)
 // ============================================
 
 function processImportFile(file) {
   const reader = new FileReader();
 
-  reader.onload = function (e) {
+  reader.onload = async function (e) {
     let parsed;
 
     try {
@@ -1180,10 +1945,12 @@ function processImportFile(file) {
       return item;
     });
 
-    const currentCount = getAllRequests().length;
+    // PENTING: mode UPSERT (id sudah ada -> UPDATE, id belum ada -> INSERT).
+    // Data lain di database yang TIDAK ada di file backup TIDAK DIHAPUS.
     const confirmed = window.confirm(
       "File backup berisi " + normalized.length + " data request.\n" +
-      "Data yang tersimpan saat ini (" + currentCount + " data) akan DITIMPA sepenuhnya.\n\n" +
+      "Data dengan ID yang sama akan DIPERBARUI, data dengan ID baru akan DITAMBAHKAN.\n" +
+      "Data lain yang sudah ada di database TIDAK akan dihapus.\n\n" +
       "Lanjutkan import?"
     );
 
@@ -1193,16 +1960,28 @@ function processImportFile(file) {
       return;
     }
 
-    saveAllRequests(normalized);
-    showToast("Import berhasil. " + normalized.length + " data telah dimuat.");
+    const rowsForSupabase = normalized.map(toSupabaseRow);
 
-    // Refresh seluruh tampilan aplikasi agar data baru langsung terlihat
-    renderDashboard();
-    renderHistoriTable();
-    renderBroadcastTable();
-    renderBackupInfo();
+    showGlobalLoading();
+    try {
+      ensureSupabaseReady();
+      const { error } = await supabaseClient
+        .from(SUPABASE_TABLE)
+        .upsert(rowsForSupabase, { onConflict: "id" });
 
-    resetImportInput();
+      if (error) throw error;
+
+      const refreshed = await refreshDataFromSupabase();
+      if (refreshed) {
+        showToast("Import berhasil. " + normalized.length + " data telah digabungkan ke database.");
+      }
+    } catch (err) {
+      logSupabaseError("Gagal import JSON ke Supabase", err);
+      showToast("⚠️ Gagal terhubung ke database. Periksa koneksi internet.");
+    } finally {
+      hideGlobalLoading();
+      resetImportInput();
+    }
   };
 
   reader.onerror = function () {
@@ -1247,19 +2026,48 @@ function initBackupActions() {
       processImportFile(file);
     });
   }
+
+  // ---- Excel ----
+  const exportExcelBtn = document.getElementById("exportExcelBtn");
+  const importExcelInput = document.getElementById("importExcelFileInput");
+  const importExcelBtn = document.getElementById("importExcelBtn");
+
+  if (exportExcelBtn) {
+    exportExcelBtn.addEventListener("click", exportExcelData);
+  }
+
+  if (importExcelInput && importExcelBtn) {
+    importExcelInput.addEventListener("change", function () {
+      importExcelBtn.disabled = !importExcelInput.files || importExcelInput.files.length === 0;
+    });
+
+    importExcelBtn.addEventListener("click", function () {
+      const file = importExcelInput.files && importExcelInput.files[0];
+      if (!file) {
+        showToast("Pilih file Excel terlebih dahulu.");
+        return;
+      }
+      processImportExcelFile(file);
+    });
+  }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
+  // ---- Setup UI & event listener (sinkron, tidak butuh data) ----
   initNavigation();
   initDropdowns();
   initMapelCustomToggle();
   initRequestForm();
   initHistoriFilters();
   initHistoriActions();
-  renderHistoriTable();
   initBroadcastActions();
-  renderBroadcastTable();
-  renderDashboard();
   initBackupActions();
-  renderBackupInfo();
+
+  // ---- Migrasi satu kali: LocalStorage lama -> Supabase (jika ada & belum pernah) ----
+  await migrateLocalStorageToSupabase();
+
+  // ---- Load data awal dari Supabase (Supabase = single source of truth) ----
+  // renderDashboard(), renderHistoriTable(), renderBroadcastTable(), dan
+  // renderBackupInfo() otomatis dipanggil di dalam refreshDataFromSupabase().
+  await refreshDataFromSupabase();
 });

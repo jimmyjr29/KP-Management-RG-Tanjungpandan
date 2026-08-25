@@ -94,6 +94,34 @@
           </div>
         </div>
 
+        <div class="quota-card">
+          <div class="quota-header">
+            <h3 class="section-title quota-title">Kuota KP Bulanan</h3>
+            <span class="quota-badge quota-normal" id="quotaBadge">Normal</span>
+          </div>
+
+          <p class="quota-period" id="quotaPeriodLabel">Periode: -</p>
+
+          <div class="quota-main-row">
+            <span class="quota-used-total" id="quotaUsedTotal">0 / 200</span>
+            <span class="quota-unit">SESI</span>
+          </div>
+
+          <div class="quota-progress-track">
+            <div class="quota-progress-fill quota-normal" id="quotaProgressFill" style="width:0%"></div>
+          </div>
+
+          <div class="quota-detail-row">
+            <span>Terpakai: <strong id="quotaTerpakai">0</strong></span>
+            <span>Sisa: <strong id="quotaSisa">200</strong></span>
+            <span>Limit: <strong>200</strong></span>
+          </div>
+
+          <p class="quota-percentage" id="quotaPercentage">0.0%</p>
+
+          <div class="quota-warning" id="quotaWarningBox" style="display:none;"></div>
+        </div>
+
         <div class="dashboard-section">
           <h3 class="section-title">KP Hari Ini</h3>
           <div class="table-wrapper">
@@ -210,6 +238,16 @@
                 <select id="tipeKp">
                   <option value="Klinik PR">Klinik PR</option>
                   <option value="Private">Private</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status">
+                  <option value="Terjadwal">Terjadwal</option>
+                  <option value="Selesai">Selesai</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Rejected">Rejected</option>
                 </select>
               </div>
 
@@ -373,26 +411,52 @@
         </div>
 
         <div class="backup-card">
-          <h3 class="section-title">Export Data</h3>
+          <h3 class="section-title">Export Data (Excel)</h3>
           <p class="backup-desc">
-            Unduh seluruh data request KP yang tersimpan saat ini sebagai file JSON.
-            File ini dapat digunakan untuk memindahkan data ke browser/perangkat lain atau sebagai cadangan.
+            Unduh seluruh data request KP yang tersimpan saat ini sebagai file Excel (.xlsx).
+            Cocok untuk dibuka, diarsipkan, atau diolah lebih lanjut di Microsoft Excel / Google Sheets.
           </p>
           <p class="backup-count">Total data saat ini: <strong id="backupDataCount">0</strong> request</p>
-          <button type="button" id="exportDataBtn" class="btn btn-primary">⬇️ Export &amp; Download Backup</button>
+          <button type="button" id="exportExcelBtn" class="btn btn-primary">📊 Export Excel</button>
         </div>
 
         <div class="backup-card">
-          <h3 class="section-title">Import Data</h3>
+          <h3 class="section-title">Import Data (Excel)</h3>
           <p class="backup-desc">
-            Pilih file backup JSON (hasil Export sebelumnya) untuk memulihkan data.
-            <strong>Seluruh data yang tersimpan saat ini akan ditimpa</strong> setelah Anda mengonfirmasi.
+            Pilih file Excel (.xlsx) untuk menambahkan data ke data yang sudah ada.
+            <strong>Data lama TIDAK akan dihapus/ditimpa</strong> — import Excel bersifat menambahkan (merge).
+            Jika file berasal dari hasil Export Excel aplikasi ini, data dengan ID yang sama otomatis tidak akan digandakan.
           </p>
           <div class="import-controls">
-            <input type="file" id="importFileInput" accept=".json,application/json">
-            <button type="button" id="importDataBtn" class="btn btn-primary" disabled>Import Data</button>
+            <input type="file" id="importExcelFileInput" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            <button type="button" id="importExcelBtn" class="btn btn-primary" disabled>📂 Import Excel</button>
           </div>
         </div>
+
+        <details class="advanced-backup">
+          <summary>⚙️ Advanced Backup (format JSON)</summary>
+
+          <div class="backup-card">
+            <h3 class="section-title">Export Data (JSON)</h3>
+            <p class="backup-desc">
+              Unduh seluruh data request KP sebagai file JSON — format teknis untuk backup penuh atau pemindahan data antar browser/perangkat.
+            </p>
+            <button type="button" id="exportDataBtn" class="btn btn-secondary">📦 Export JSON</button>
+          </div>
+
+          <div class="backup-card">
+            <h3 class="section-title">Import Data (JSON)</h3>
+            <p class="backup-desc">
+              Pilih file backup JSON (hasil Export JSON sebelumnya) untuk digabungkan ke database.
+              Data dengan ID yang sama akan <strong>diperbarui (update)</strong>, data dengan ID baru akan <strong>ditambahkan (insert)</strong>.
+              <strong>Data lain yang sudah ada di database TIDAK akan dihapus.</strong>
+            </p>
+            <div class="import-controls">
+              <input type="file" id="importFileInput" accept=".json,application/json">
+              <button type="button" id="importDataBtn" class="btn btn-secondary" disabled>📥 Import JSON</button>
+            </div>
+          </div>
+        </details>
       </section>
 
     </main>
@@ -402,6 +466,15 @@
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast"></div>
 
+  <!-- LOADING INDICATOR GLOBAL (sederhana) -->
+  <div id="globalLoading" class="global-loading" style="display:none;">
+    ⏳ Memuat data dari database...
+  </div>
+
+  <!-- SheetJS (xlsx) - CDN gratis, untuk fitur Export/Import Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Supabase JS Client v2 - CDN gratis, untuk penyimpanan data request KP -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>
