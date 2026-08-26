@@ -1011,8 +1011,12 @@ function renderHistoriTable() {
     html += "<td>" + escapeHtml(r.masterTeacher) + "</td>";
     html += "<td>" + getStatusBadgeHtml(r.status || "Request") + "</td>";
     html += '<td class="action-cell">';
-    html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
-    //JIMMY GANTENG html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
+    
+    // HANYA JIMMY
+    // html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
+    // html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
+    // JIMMY GANTENG 
+
     html += "</td>";
     html += "</tr>";
   });
