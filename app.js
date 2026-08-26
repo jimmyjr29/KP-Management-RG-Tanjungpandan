@@ -385,6 +385,31 @@ function switchToPage(pageId) {
   }
 }
 
+// ============================================
+// SIDEBAR: CIUTKAN / LEBARKAN (persist pilihan di browser)
+// ============================================
+
+const SIDEBAR_COLLAPSE_KEY = "kp_sidebar_collapsed";
+
+function initSidebarCollapse() {
+  const toggleBtn = document.getElementById("sidebarToggleBtn");
+  const appContainer = document.querySelector(".app-container");
+  if (!toggleBtn || !appContainer) return;
+
+  const isCollapsed = localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === "true";
+  if (isCollapsed) {
+    appContainer.classList.add("sidebar-collapsed");
+  }
+
+  toggleBtn.addEventListener("click", function () {
+    appContainer.classList.toggle("sidebar-collapsed");
+    localStorage.setItem(
+      SIDEBAR_COLLAPSE_KEY,
+      appContainer.classList.contains("sidebar-collapsed") ? "true" : "false"
+    );
+  });
+}
+
 function initNavigation() {
   const navItems = document.querySelectorAll(".nav-item");
 
@@ -768,6 +793,106 @@ function escapeHtml(str) {
 }
 
 // ============================================
+// STATUS BADGE (dipakai di Dashboard & Histori)
+// ============================================
+
+const STATUS_BADGE_MAP = {
+  Request: { label: "Request", cls: "status-request" },
+  Terjadwal: { label: "Terjadwal", cls: "status-terjadwal" },
+  Cancelled: { label: "Cancelled", cls: "status-cancelled" },
+  Rejected: { label: "Rejected", cls: "status-rejected" },
+  Selesai: { label: "Selesai", cls: "status-selesai" }
+};
+
+function getStatusBadgeHtml(status) {
+  const info = STATUS_BADGE_MAP[status] || STATUS_BADGE_MAP.Request;
+  return '<span class="status-badge ' + info.cls + '">' + info.label + "</span>";
+}
+
+// ============================================
+// PAGINATION (dipakai di Histori & Broadcast)
+// ============================================
+
+function getPageNumbersToShow(current, total) {
+  const delta = 1;
+  const middle = [];
+
+  for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+    middle.push(i);
+  }
+
+  const result = [1];
+  if (middle.length && middle[0] > 2) result.push("...");
+  result.push.apply(result, middle);
+  if (middle.length && middle[middle.length - 1] < total - 1) result.push("...");
+  if (total > 1) result.push(total);
+
+  return result;
+}
+
+// onPageChange(newPage) dipanggil ketika user mengklik salah satu kontrol halaman.
+function renderPaginationBar(containerId, totalItems, currentPage, pageSize, onPageChange) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (totalItems === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const totalPages = Math.max(Math.ceil(totalItems / pageSize), 1);
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  let html =
+    '<span class="pagination-info">Halaman ' +
+    currentPage +
+    " dari " +
+    totalPages +
+    " &middot; " +
+    totalItems +
+    " data</span>";
+
+  html +=
+    '<button type="button" class="pagination-btn" data-page="prev" ' +
+    (currentPage === 1 ? "disabled" : "") +
+    ">&laquo;</button>";
+
+  getPageNumbersToShow(currentPage, totalPages).forEach(function (p) {
+    if (p === "...") {
+      html += '<span class="pagination-ellipsis">&hellip;</span>';
+    } else {
+      html +=
+        '<button type="button" class="pagination-btn ' +
+        (p === currentPage ? "active" : "") +
+        '" data-page="' +
+        p +
+        '">' +
+        p +
+        "</button>";
+    }
+  });
+
+  html +=
+    '<button type="button" class="pagination-btn" data-page="next" ' +
+    (currentPage === totalPages ? "disabled" : "") +
+    ">&raquo;</button>";
+
+  container.innerHTML = html;
+
+  container.querySelectorAll("button[data-page]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const val = btn.getAttribute("data-page");
+      let newPage = currentPage;
+      if (val === "prev") newPage = Math.max(currentPage - 1, 1);
+      else if (val === "next") newPage = Math.min(currentPage + 1, totalPages);
+      else newPage = parseInt(val, 10);
+      onPageChange(newPage);
+    });
+  });
+}
+
+// ============================================
 // HISTORI: FILTER DROPDOWN (dinamis dari data)
 // ============================================
 
@@ -858,15 +983,24 @@ function renderHistoriTable() {
   const data = getFilteredSortedRequests();
 
   if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Tidak ada data request KP yang cocok.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Tidak ada data request KP yang cocok.</td></tr>';
+    renderPaginationBar("historiPagination", 0, 1, HISTORI_PAGE_SIZE, function () {});
     return;
   }
 
+  const totalPages = Math.max(Math.ceil(data.length / HISTORI_PAGE_SIZE), 1);
+  if (historiCurrentPage > totalPages) historiCurrentPage = totalPages;
+  if (historiCurrentPage < 1) historiCurrentPage = 1;
+
+  const startIdx = (historiCurrentPage - 1) * HISTORI_PAGE_SIZE;
+  const pageData = data.slice(startIdx, startIdx + HISTORI_PAGE_SIZE);
+
   let html = "";
 
-  data.forEach(function (r, index) {
+  pageData.forEach(function (r, idx) {
+    const rowNumber = startIdx + idx + 1;
     html += "<tr>";
-    html += "<td>" + (index + 1) + "</td>";
+    html += "<td>" + rowNumber + "</td>";
     html += "<td>" + escapeHtml(r.namaSiswa) + "</td>";
     html += "<td>" + escapeHtml(r.saAgent) + "</td>";
     html += "<td>" + getHariFromTanggal(r.tanggal) + "</td>";
@@ -875,6 +1009,7 @@ function renderHistoriTable() {
     html += "<td>" + escapeHtml(r.mapel) + "</td>";
     html += "<td>" + escapeHtml(r.kelas) + "</td>";
     html += "<td>" + escapeHtml(r.masterTeacher) + "</td>";
+    html += "<td>" + getStatusBadgeHtml(r.status || "Request") + "</td>";
     html += '<td class="action-cell">';
     html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
     html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>';
@@ -883,6 +1018,11 @@ function renderHistoriTable() {
   });
 
   tbody.innerHTML = html;
+
+  renderPaginationBar("historiPagination", data.length, historiCurrentPage, HISTORI_PAGE_SIZE, function (newPage) {
+    historiCurrentPage = newPage;
+    renderHistoriTable();
+  });
 }
 
 // ============================================
@@ -895,8 +1035,14 @@ function initHistoriFilters() {
   ids.forEach(function (id) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener("input", renderHistoriTable);
-    el.addEventListener("change", renderHistoriTable);
+    el.addEventListener("input", function () {
+      historiCurrentPage = 1;
+      renderHistoriTable();
+    });
+    el.addEventListener("change", function () {
+      historiCurrentPage = 1;
+      renderHistoriTable();
+    });
   });
 
   const resetBtn = document.getElementById("resetFilterBtn");
@@ -908,6 +1054,7 @@ function initHistoriFilters() {
       document.getElementById("filterMT").value = "";
       document.getElementById("filterMapel").value = "";
       document.getElementById("filterKelas").value = "";
+      historiCurrentPage = 1;
       renderHistoriTable();
     });
   }
@@ -937,6 +1084,12 @@ function initHistoriActions() {
 // ============================================
 
 const selectedBroadcastIds = new Set();
+
+const HISTORI_PAGE_SIZE = 10;
+let historiCurrentPage = 1;
+
+const BROADCAST_PAGE_SIZE = 10;
+let broadcastCurrentPage = 1;
 
 function updateSelectedCountLabel() {
   const label = document.getElementById("selectedCountLabel");
@@ -1062,21 +1215,32 @@ function renderBroadcastTable() {
   const tbody = document.getElementById("broadcastTableBody");
   if (!tbody) return;
 
+  // Urutan tampilan: data TERBARU lebih dulu (tanggal & jam mulai descending).
+  // Ini hanya memengaruhi urutan tampilan/pagination - seleksi checklist &
+  // aksi "Pilih Semua"/"Pilih Tanggal Ini" tetap bekerja atas seluruh data.
   const requests = getAllRequests().slice().sort(function (a, b) {
-    const dateCompare = (a.tanggal || "").localeCompare(b.tanggal || "");
+    const dateCompare = (b.tanggal || "").localeCompare(a.tanggal || "");
     if (dateCompare !== 0) return dateCompare;
-    return (a.jamMulai || "").localeCompare(b.jamMulai || "");
+    return (b.jamMulai || "").localeCompare(a.jamMulai || "");
   });
 
   if (requests.length === 0) {
     tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Belum ada data request KP.</td></tr>';
     updateSelectedCountLabel();
+    renderPaginationBar("broadcastPagination", 0, 1, BROADCAST_PAGE_SIZE, function () {});
     return;
   }
 
+  const totalPages = Math.max(Math.ceil(requests.length / BROADCAST_PAGE_SIZE), 1);
+  if (broadcastCurrentPage > totalPages) broadcastCurrentPage = totalPages;
+  if (broadcastCurrentPage < 1) broadcastCurrentPage = 1;
+
+  const startIdx = (broadcastCurrentPage - 1) * BROADCAST_PAGE_SIZE;
+  const pageData = requests.slice(startIdx, startIdx + BROADCAST_PAGE_SIZE);
+
   let html = "";
 
-  requests.forEach(function (r) {
+  pageData.forEach(function (r) {
     const checked = selectedBroadcastIds.has(r.id) ? "checked" : "";
     html += "<tr>";
     html += '<td class="checkbox-col"><input type="checkbox" data-id="' + r.id + '" ' + checked + "></td>";
@@ -1093,6 +1257,11 @@ function renderBroadcastTable() {
 
   tbody.innerHTML = html;
   updateSelectedCountLabel();
+
+  renderPaginationBar("broadcastPagination", requests.length, broadcastCurrentPage, BROADCAST_PAGE_SIZE, function (newPage) {
+    broadcastCurrentPage = newPage;
+    renderBroadcastTable();
+  });
 }
 
 // ============================================
@@ -1392,6 +1561,23 @@ function renderQuotaCard() {
   fillEl.style.width = Math.min(percentage, 100) + "%";
   fillEl.className = "quota-progress-fill " + statusInfo.className;
 
+  // Gauge lingkaran kaca di dashboard - lingkaran mengikuti persentase yang sama
+  // dengan progress bar linear di atas, hanya beda bentuk visualnya.
+  const gaugeFill = document.getElementById("quotaGaugeFill");
+  const gaugePercentLabel = document.getElementById("quotaGaugePercent");
+  if (gaugeFill && gaugePercentLabel) {
+    const radius = 50;
+    const circumference = 2 * Math.PI * radius;
+    const clampedPct = Math.min(Math.max(percentage, 0), 100);
+    const offset = circumference - (clampedPct / 100) * circumference;
+
+    gaugeFill.style.strokeDasharray = circumference.toFixed(2);
+    gaugeFill.style.strokeDashoffset = offset.toFixed(2);
+    gaugeFill.setAttribute("class", "quota-gauge-fill " + statusInfo.className);
+
+    gaugePercentLabel.textContent = Math.round(percentage) + "%";
+  }
+
   badgeEl.textContent = statusInfo.label;
   badgeEl.className = "quota-badge " + statusInfo.className;
 
@@ -1467,7 +1653,7 @@ function renderKpHariIniList(kpHariIniArr) {
   });
 
   if (sorted.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Tidak ada request KP untuk hari ini.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Tidak ada request KP untuk hari ini.</td></tr>';
     return;
   }
 
@@ -1480,6 +1666,7 @@ function renderKpHariIniList(kpHariIniArr) {
     html += "<td>" + escapeHtml(r.kelas) + "</td>";
     html += "<td>" + escapeHtml(r.masterTeacher) + "</td>";
     html += "<td>" + escapeHtml(r.ruangan) + "</td>";
+    html += "<td>" + getStatusBadgeHtml(r.status || "Request") + "</td>";
     html += "</tr>";
   });
 
@@ -1497,7 +1684,7 @@ function renderRequestTerbaru(requests) {
   const latest = sorted.slice(0, 5);
 
   if (latest.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada request KP.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Belum ada request KP.</td></tr>';
     return;
   }
 
@@ -1509,6 +1696,7 @@ function renderRequestTerbaru(requests) {
     html += "<td>" + (r.jamMulai || "-") + " - " + (r.jamSelesai || "-") + "</td>";
     html += "<td>" + escapeHtml(r.mapel) + "</td>";
     html += "<td>" + escapeHtml(r.masterTeacher) + "</td>";
+    html += "<td>" + getStatusBadgeHtml(r.status || "Request") + "</td>";
     html += "</tr>";
   });
 
@@ -2066,6 +2254,7 @@ function initBackupActions() {
 
 document.addEventListener("DOMContentLoaded", async function () {
   // ---- Setup UI & event listener (sinkron, tidak butuh data) ----
+  initSidebarCollapse();
   initNavigation();
   initDropdowns();
   initMapelCustomToggle();

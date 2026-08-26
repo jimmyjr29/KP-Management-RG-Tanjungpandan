@@ -4,16 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KP Management Tanjung Pandan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="app-container">
       <!-- SIDEBAR -->
       <aside class="sidebar">
+        <button
+          type="button"
+          class="sidebar-toggle"
+          id="sidebarToggleBtn"
+          aria-label="Ciutkan / lebarkan sidebar"
+          title="Ciutkan / lebarkan sidebar"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+
         <div class="sidebar-header">
-          <h1>KP Management</h1>
-          <p>Tanjung Pandan</p>
-          <small>By. Mr. Jims 😎</small>
+          <div class="sidebar-logo">KP</div>
+          <div class="sidebar-header-text">
+            <h1>KP Management</h1>
+            <p>Tanjung Pandan</p>
+            <small>By. Mr. Jims 😎</small>
+          </div>
         </div>
 
         <nav class="sidebar-nav">
@@ -42,6 +63,11 @@
             <span class="nav-text">Backup Data</span>
           </button>
         </nav>
+
+        <div class="sidebar-footer">
+          <span class="sidebar-footer-status" aria-hidden="true"></span>
+          <span class="sidebar-footer-text">KP Management &copy; 2026 · Tanjung Pandan</span>
+        </div>
       </aside>
 
       <!-- MAIN CONTENT -->
@@ -93,41 +119,60 @@
           </div>
 
           <div class="quota-card">
-            <div class="quota-header">
-              <h3 class="section-title quota-title">Kuota KP Bulanan</h3>
-              <span class="quota-badge quota-normal" id="quotaBadge"
-                >Normal</span
-              >
+            <div class="quota-gauge-wrap">
+              <svg class="quota-gauge-svg" viewBox="0 0 120 120">
+                <circle class="quota-gauge-track" cx="60" cy="60" r="50"></circle>
+                <circle
+                  class="quota-gauge-fill quota-normal"
+                  id="quotaGaugeFill"
+                  cx="60"
+                  cy="60"
+                  r="50"
+                ></circle>
+              </svg>
+              <div class="quota-gauge-center">
+                <span class="quota-gauge-percent" id="quotaGaugePercent">0%</span>
+                <span class="quota-gauge-caption">Terpakai</span>
+              </div>
             </div>
 
-            <p class="quota-period" id="quotaPeriodLabel">Periode: -</p>
+            <div class="quota-details">
+              <div class="quota-header">
+                <h3 class="section-title quota-title">Kuota KP Bulanan</h3>
+                <span class="quota-badge quota-normal" id="quotaBadge"
+                  >Normal</span
+                >
+              </div>
 
-            <div class="quota-main-row">
-              <span class="quota-used-total" id="quotaUsedTotal">0 / 200</span>
-              <span class="quota-unit">SESI</span>
-            </div>
+              <p class="quota-period" id="quotaPeriodLabel">Periode: -</p>
 
-            <div class="quota-progress-track">
+              <div class="quota-main-row">
+                <span class="quota-used-total" id="quotaUsedTotal">0 / 200</span>
+                <span class="quota-unit">SESI</span>
+              </div>
+
+              <div class="quota-progress-track">
+                <div
+                  class="quota-progress-fill quota-normal"
+                  id="quotaProgressFill"
+                  style="width: 0%"
+                ></div>
+              </div>
+
+              <div class="quota-detail-row">
+                <span>Terpakai: <strong id="quotaTerpakai">0</strong></span>
+                <span>Sisa: <strong id="quotaSisa">200</strong></span>
+                <span>Limit: <strong>150</strong></span>
+              </div>
+
+              <p class="quota-percentage" id="quotaPercentage">0.0%</p>
+
               <div
-                class="quota-progress-fill quota-normal"
-                id="quotaProgressFill"
-                style="width: 0%"
+                class="quota-warning"
+                id="quotaWarningBox"
+                style="display: none"
               ></div>
             </div>
-
-            <div class="quota-detail-row">
-              <span>Terpakai: <strong id="quotaTerpakai">0</strong></span>
-              <span>Sisa: <strong id="quotaSisa">200</strong></span>
-              <span>Limit: <strong>200</strong></span>
-            </div>
-
-            <p class="quota-percentage" id="quotaPercentage">0.0%</p>
-
-            <div
-              class="quota-warning"
-              id="quotaWarningBox"
-              style="display: none"
-            ></div>
           </div>
 
           <div class="dashboard-section">
@@ -142,6 +187,7 @@
                     <th>Kelas</th>
                     <th>Master Teacher</th>
                     <th>Ruangan</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody id="kpHariIniBody">
@@ -162,6 +208,7 @@
                     <th>Jam</th>
                     <th>Mapel</th>
                     <th>Master Teacher</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody id="requestTerbaruBody">
@@ -371,6 +418,7 @@
                 <!-- Diisi otomatis oleh app.js -->
               </tbody>
             </table>
+            <div class="pagination" id="broadcastPagination"></div>
           </div>
 
           <div class="broadcast-action-bar">
@@ -488,6 +536,7 @@
                   <th>Mata Pelajaran</th>
                   <th>Kelas</th>
                   <th>Nama MT</th>
+                  <th>Status</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -495,6 +544,7 @@
                 <!-- Diisi otomatis oleh app.js -->
               </tbody>
             </table>
+            <div class="pagination" id="historiPagination"></div>
           </div>
         </section>
 
