@@ -69,6 +69,7 @@ function hideGlobalLoading() {
 const MASTER_TEACHERS = [
   { nama: "Achmad Abdussalam", email: "abdussalamachmad3@gmail.com", noWa: "6283175623433" },
   { nama: "Addela Amelia", email: "addelaameliajob@gmail.com", noWa: "6281995401403" },
+  { nama: "Adeline", email: "adeline22@gmail.com", noWa: "6285219392443" },
   { nama: "Anisah", email: "anisahhnf@gmail.com", noWa: "6281311023710" },
   { nama: "Annida Naufallina", email: "dainnaafaun@gmail.com", noWa: "6281214458037" },
   { nama: "Cherin", email: "cherinerin1312@gmail.com", noWa: "6283179135146" },
@@ -1013,8 +1014,8 @@ function renderHistoriTable() {
     html += '<td class="action-cell">';
     
     // HANYA JIMMY
-    // html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
-    // html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
+      // html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
+      // html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
     // JIMMY GANTENG 
 
     html += "</td>";
