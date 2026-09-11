@@ -1015,9 +1015,9 @@ function renderHistoriTable() {
     html += '<td class="action-cell">';
     
     // HANYA JIMMY
-    //   html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
-    //   html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
-    // // JIMMY GANTENG 
+      html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
+      html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
+    // JIMMY GANTENG 
 
     html += "</td>";
     html += "</tr>";
