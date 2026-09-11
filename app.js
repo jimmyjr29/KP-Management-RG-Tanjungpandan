@@ -82,6 +82,7 @@ const MASTER_TEACHERS = [
   { nama: "Felicia Prassilia", email: "feliciaaprssl12.pel@gmail.com", noWa: "628381245975" },
   { nama: "Ferdiyanto", email: "ferdiyanto6q@gmail.com", noWa: "6287713426806" },
   { nama: "Indah Amalia Putri", email: "indahamaliap2121@gmail.com", noWa: "6281477182894" },
+  { nama: "Lidya", email: "lidya@gmail.com", noWa: "6287869774551" }
   { nama: "Maharizky Aji Luhur", email: "ajiluhur0813@gmail.com", noWa: "6281943293338" },
   { nama: "Misfah Nur Rohmah", email: "ppg.misfahrohmah01128@program.belajar.id", noWa: "6285526313756" },
   { nama: "Monica Putri Ramadan", email: "monica.putri2080@guru.sd.belajar.id", noWa: "6287802550723" },
@@ -1014,9 +1015,9 @@ function renderHistoriTable() {
     html += '<td class="action-cell">';
     
     // HANYA JIMMY
-      // html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
-      // html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
-    // JIMMY GANTENG 
+    //   html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
+    //   html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
+    // // JIMMY GANTENG 
 
     html += "</td>";
     html += "</tr>";
