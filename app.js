@@ -82,7 +82,7 @@ const MASTER_TEACHERS = [
   { nama: "Felicia Prassilia", email: "feliciaaprssl12.pel@gmail.com", noWa: "628381245975" },
   { nama: "Ferdiyanto", email: "ferdiyanto6q@gmail.com", noWa: "6287713426806" },
   { nama: "Indah Amalia Putri", email: "indahamaliap2121@gmail.com", noWa: "6281477182894" },
-  { nama: "Lidya", email: "lidya@gmail.com", noWa: "6287869774551" }
+  { nama: "Lidya", email: "lidya@gmail.com", noWa: "6287869774551" },
   { nama: "Maharizky Aji Luhur", email: "ajiluhur0813@gmail.com", noWa: "6281943293338" },
   { nama: "Misfah Nur Rohmah", email: "ppg.misfahrohmah01128@program.belajar.id", noWa: "6285526313756" },
   { nama: "Monica Putri Ramadan", email: "monica.putri2080@guru.sd.belajar.id", noWa: "6287802550723" },
@@ -211,27 +211,6 @@ function toSupabaseRow(reqObj) {
 
   return row;
 }
-
-// function toSupabaseRow(reqObj) {
-//   return {
-//     id: reqObj.id,
-//     created_at: reqObj.createdAt || new Date().toISOString(),
-//     updated_at: reqObj.updatedAt || null,
-//     nama_siswa: reqObj.namaSiswa || null,
-//     sa_agent: reqObj.saAgent || null,
-//     tanggal: reqObj.tanggal || null,
-//     jam_mulai: reqObj.jamMulai || null,
-//     jam_selesai: reqObj.jamSelesai || null,
-//     mapel: reqObj.mapel || null,
-//     kelas: reqObj.kelas || null,
-//     master_teacher: reqObj.masterTeacher || null,
-//     ruangan: reqObj.ruangan || null,
-//     tipe_kp: reqObj.tipeKp || null,
-//     status: reqObj.status || null,
-//     topik: reqObj.topik || null,
-//     jumlah_sesi: reqObj.jumlahSesi && reqObj.jumlahSesi > 0 ? reqObj.jumlahSesi : 1
-//   };
-// }
 
 // Kolom Postgres bertipe TIME sering keluar sebagai "09:30:00" (dengan detik).
 // Dipotong jadi "09:30" agar konsisten dgn seluruh logika app (sorting, format broadcast, dst).
@@ -1015,8 +994,8 @@ function renderHistoriTable() {
     html += '<td class="action-cell">';
     
     // HANYA JIMMY
-      html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
-      html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
+      // html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
+      // html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
     // JIMMY GANTENG 
 
     html += "</td>";
