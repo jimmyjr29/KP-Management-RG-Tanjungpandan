@@ -111,15 +111,16 @@ const MASTER_AGENTS = [
 ];
 
 const MASTER_ROOMS = [
-  { full: "101 Lantai 1", short: "101" },
-  { full: "102 Lantai 1", short: "102" },
-  { full: "103 Lantai 1", short: "103" },
-  { full: "104 Lantai 1", short: "104" },
-  { full: "201 Lantai 2", short: "201" },
-  { full: "202 Lantai 2", short: "202" },
-  { full: "203 Lantai 2", short: "203" },
-  { full: "204 Lantai 2", short: "204" },
-  { full: "Office Lantai 2", short: "Office" }
+  { full: "101 Lantai 1", short: "101 Lantai 1" },
+  { full: "102 Lantai 1", short: "102 Lantai 1" },
+  { full: "103 Lantai 1", short: "103 Lantai 1" },
+  { full: "104 Lantai 1", short: "104 Lantai 1" },
+  { full: "201 Lantai 2", short: "201 Lantai 2" },
+  { full: "202 Lantai 2", short: "202 Lantai 2" },
+  { full: "203 Lantai 2", short: "203 Lantai 2" },
+  { full: "204 Lantai 2", short: "204 Lantai 2" },
+  { full: "Office Lantai 2", short: "Office Lantai 2" },
+  { full: "Lorong Lantai 2", short: "Lorong Lantai 2" }
 ];
 
 const MASTER_MAPEL = [
