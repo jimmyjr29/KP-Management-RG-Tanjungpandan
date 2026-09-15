@@ -81,6 +81,7 @@ const MASTER_TEACHERS = [
   { nama: "Erieka Rahmah", email: "eriekarahm23@gmail.com", noWa: "6285172392302" },
   { nama: "Felicia Prassilia", email: "feliciaaprssl12.pel@gmail.com", noWa: "628381245975" },
   { nama: "Ferdiyanto", email: "ferdiyanto6q@gmail.com", noWa: "6287713426806" },
+  { nama: "Ghea Aprilia", email: "gheaaprilia@gmail.com", noWa: "62859109910306" },
   { nama: "Indah Amalia Putri", email: "indahamaliap2121@gmail.com", noWa: "6281477182894" },
   { nama: "Lidya", email: "lidya@gmail.com", noWa: "6287869774551" },
   { nama: "Maharizky Aji Luhur", email: "ajiluhur0813@gmail.com", noWa: "6281943293338" },
