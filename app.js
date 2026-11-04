@@ -70,6 +70,7 @@ const MASTER_TEACHERS = [
   { nama: "Achmad Abdussalam", email: "abdussalamachmad3@gmail.com", noWa: "6283175623433" },
   { nama: "Addela Amelia", email: "addelaameliajob@gmail.com", noWa: "6281995401403" },
   { nama: "Adeline", email: "adeline22@gmail.com", noWa: "6285219392443" },
+  { nama: "Ajeng", email: "Ajengg@gmail.com", noWa: "6281949022820" },
   { nama: "Anisah", email: "anisahhnf@gmail.com", noWa: "6281311023710" },
   { nama: "Annida Naufallina", email: "dainnaafaun@gmail.com", noWa: "6281214458037" },
   { nama: "Cherin", email: "cherinerin1312@gmail.com", noWa: "6283179135146" },
@@ -92,9 +93,10 @@ const MASTER_TEACHERS = [
   { nama: "Nur Izza Arifah", email: "nurizzaarifah10@gmail.com", noWa: "6281949059996" },
   { nama: "Primanisa Nurgravisi", email: "prinurgravisi@gmail.com", noWa: "6283175353388" },
   { nama: "Princessa Dinda Oktaviana", email: "incess2210@gmail.com", noWa: "6282134489158" },
+  { nama: "Rayi Aditya Rivanda", email: "rayiiii@gmail.com", noWa: "6283183488192" },
   { nama: "Revnika Fethya", email: "revibastian5@gmail.com", noWa: "6283183488192" },
   { nama: "Riska Istiqomah", email: "riskaaisti@gmail.com", noWa: "6283175085547" },
-  { nama: "Safua Nur Habibah", email: "safuanurhabibah24@gmail.com", noWa: "6282246340534" },
+  { nama: "Habibah", email: "safuanurhabibah24@gmail.com", noWa: "6282246340534" },
   { nama: "Sheila", email: "sheilafanesia22@gmail.com", noWa: "62859110220208" },
   { nama: "Sonny Kosasi", email: "sonnykosasi16@gmail.com", noWa: "6281949582772" },
   { nama: "Suci Utami Putri", email: "suciputri82@guru.sma.belajar.id", noWa: "628176052264" },
@@ -996,8 +998,8 @@ function renderHistoriTable() {
     html += '<td class="action-cell">';
     
     // HANYA JIMMY
-      // html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
-      // html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
+      html += '<button type="button" class="btn-icon btn-edit" data-action="edit" data-id="' + r.id + '">Edit</button>';
+      html += '<button type="button" class="btn-icon btn-delete" data-action="delete" data-id="' + r.id + '">Hapus</button>'; 
     // JIMMY GANTENG 
 
     html += "</td>";
